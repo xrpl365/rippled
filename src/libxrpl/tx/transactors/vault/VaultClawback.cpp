@@ -11,6 +11,7 @@
 #include <xrpl/tx/transactors/vault/VaultClawback.h>
 
 #include <optional>
+#include <utility>
 
 namespace xrpl {
 NotTEC
@@ -223,40 +224,41 @@ VaultClawback::assetsToClawback(
     auto const assetsAvailable = vault->at(sfAssetsAvailable);
     auto const mptIssuanceID = *vault->at(sfShareMPTID);
     MPTIssue const share{mptIssuanceID};
-
-    if (clawbackAmount == beast::zero)
-    {
-        auto const sharesDestroyed = accountHolds(
-            view(),
-            holder,
-            share,
-            FreezeHandling::fhIGNORE_FREEZE,
-            AuthHandling::ahIGNORE_AUTH,
-            j_);
-        auto const maybeAssets = sharesToAssetsWithdraw(vault, sleShareIssuance, sharesDestroyed);
-        if (!maybeAssets)
-            return Unexpected(tecINTERNAL);  // LCOV_EXCL_LINE
-
-        return std::make_pair(*maybeAssets, sharesDestroyed);
-    }
-
     STAmount sharesDestroyed;
-    STAmount assetsRecovered = clawbackAmount;
+    STAmount assetsRecovered;
+
     try
     {
+        if (clawbackAmount == beast::zero)
+        {
+            sharesDestroyed = accountHolds(
+                view(),
+                holder,
+                share,
+                FreezeHandling::fhIGNORE_FREEZE,
+                AuthHandling::ahIGNORE_AUTH,
+                j_);
+            auto const maybeAssets =
+                sharesToAssetsWithdraw(vault, sleShareIssuance, sharesDestroyed);
+            if (!maybeAssets)
+                return Unexpected(tecINTERNAL);  // LCOV_EXCL_LINE
+
+            assetsRecovered = *maybeAssets;
+        }
+        else
         {
             auto const maybeShares =
-                assetsToSharesWithdraw(vault, sleShareIssuance, assetsRecovered);
+                assetsToSharesWithdraw(vault, sleShareIssuance, clawbackAmount);
             if (!maybeShares)
                 return Unexpected(tecINTERNAL);  // LCOV_EXCL_LINE
             sharesDestroyed = *maybeShares;
+
+            auto const maybeAssets =
+                sharesToAssetsWithdraw(vault, sleShareIssuance, sharesDestroyed);
+            if (!maybeAssets)
+                return Unexpected(tecINTERNAL);  // LCOV_EXCL_LINE
+            assetsRecovered = *maybeAssets;
         }
-
-        auto const maybeAssets = sharesToAssetsWithdraw(vault, sleShareIssuance, sharesDestroyed);
-        if (!maybeAssets)
-            return Unexpected(tecINTERNAL);  // LCOV_EXCL_LINE
-        assetsRecovered = *maybeAssets;
-
         // Clamp to maximum.
         if (assetsRecovered > *assetsAvailable)
         {

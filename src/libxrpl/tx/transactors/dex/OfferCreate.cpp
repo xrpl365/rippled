@@ -224,15 +224,15 @@ OfferCreate::checkAcceptAsset(
     // Read the trustline once for multiple flag checks to optimize performance
     auto const trustLine = view.read(keylet::line(id, issue.account, issue.currency));
 
-    // Check if the issuer has lsfDisallowIncomingTrustline set
-    // If so, the account must already have a trustline to receive tokens
+    // Check if the issuer has lsfDisallowIncomingTrustline set.
+    // If so, the account must already have a trustline to receive tokens.
     if (view.rules().enabled(fixDisallowIncomingV1_1) &&
         ((*issuerAccount)[sfFlags] & lsfDisallowIncomingTrustline) != 0u)
     {
         if (!trustLine)
         {
             JLOG(j.debug())
-                << "delay: can't receive IOUs from issuer with DisallowIncomingTrustline set.";
+                << "delay: can't receive IOUs from issuer with DisallowIncomingTrustline set";
             return ((flags & tapRETRY) != 0u) ? TER{terNO_LINE} : TER{tecNO_LINE};
         }
     }

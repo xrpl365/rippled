@@ -6118,7 +6118,7 @@ class NFTokenBaseUtil_test : public beast::unit_test::suite
 
             // Check if the latest transaction is ours (it should be, but
             // account_tx can be ordering-dependent)
-            bool isOurTransaction = (accountTx[jss::hash].asString() == txHash);
+            bool const isOurTransaction = (accountTx[jss::hash].asString() == txHash);
 
             // Only check synthetic fields if this is our transaction
             if (isOurTransaction)
@@ -6240,7 +6240,7 @@ class NFTokenBaseUtil_test : public beast::unit_test::suite
 
             // Check if the latest transaction is ours (it should be, but
             // account_tx can be ordering-dependent)
-            bool isOurTransaction = (accountTx[jss::hash].asString() == txHash);
+            bool const isOurTransaction = (accountTx[jss::hash].asString() == txHash);
 
             // Only check synthetic fields if this is our transaction
             if (isOurTransaction)

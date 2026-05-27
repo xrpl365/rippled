@@ -1,6 +1,7 @@
 #pragma once
 
 #include <xrpl/tx/Transactor.h>
+#include <xrpl/tx/transactors/vault/VaultInvariantData.h>
 
 namespace xrpl {
 
@@ -41,6 +42,9 @@ public:
         XRPAmount fee,
         ReadView const& view,
         beast::Journal const& j) override;
+
+private:
+    VaultInvariantData invariantData_;
 };
 
 }  // namespace xrpl

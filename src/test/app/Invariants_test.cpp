@@ -52,7 +52,7 @@
 #include <xrpl/tx/Transactor.h>
 #include <xrpl/tx/applySteps.h>
 #include <xrpl/tx/invariants/DirectoryInvariant.h>
-#include <xrpl/tx/invariants/VaultInvariant.h>
+#include <xrpl/tx/transactors/vault/VaultInvariantData.h>
 
 #include <algorithm>
 #include <array>
@@ -4764,12 +4764,12 @@ class Invariants_test : public beast::unit_test::Suite
         {
             std::string name;
             std::int32_t expectedMinScale;
-            std::vector<ValidVault::DeltaInfo> values;
+            std::vector<VaultInvariantData::DeltaInfo> values;
         };
 
         NumberMantissaScaleGuard const g{MantissaRange::MantissaScale::Large};
 
-        auto makeDelta = [&vaultAsset](Number const& n) -> ValidVault::DeltaInfo {
+        auto makeDelta = [&vaultAsset](Number const& n) -> VaultInvariantData::DeltaInfo {
             return {.delta = n, .scale = scale(n, vaultAsset.raw())};
         };
 
@@ -4811,7 +4811,7 @@ class Invariants_test : public beast::unit_test::Suite
         {
             testcase("vault computeCoarsestScale: " + tc.name);
 
-            auto const actualScale = ValidVault::computeCoarsestScale(tc.values);
+            auto const actualScale = VaultInvariantData::computeCoarsestScale(tc.values);
 
             BEAST_EXPECTS(
                 actualScale == tc.expectedMinScale,
@@ -4849,7 +4849,7 @@ class Invariants_test : public beast::unit_test::Suite
         {
             testcase("vault computeCoarsestScale: " + tc.name);
 
-            auto const actualScale = ValidVault::computeCoarsestScale(tc.values);
+            auto const actualScale = VaultInvariantData::computeCoarsestScale(tc.values);
 
             BEAST_EXPECTS(
                 actualScale == tc.expectedMinScale,

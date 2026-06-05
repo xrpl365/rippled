@@ -20,6 +20,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 
 namespace xrpl {
 
@@ -39,8 +40,6 @@ ConsensusTransSetSF::gotNode(
     if (fromFilter)
         return;
 
-    nodeCache_.insert(nodeHash, nodeData);
-
     if ((type == SHAMapNodeType::TnTransactionNm) && (nodeData.size() > 16))
     {
         // this is a transaction, and we didn't have it
@@ -56,9 +55,20 @@ ConsensusTransSetSF::gotNode(
                 stx->getTransactionID() == nodeHash.asUInt256(),
                 "xrpl::ConsensusTransSetSF::gotNode : transaction hash "
                 "match");
+
+            // Rather than caching the (potentially large) transaction blob in
+            // nodeCache_, store the transaction in the TransactionMaster so
+            // getNode() can rebuild the leaf on demand. This is done
+            // synchronously to close the window before the asynchronous
+            // submission below populates the cache.
+            std::string reason;
+            auto tx = std::make_shared<Transaction>(stx, reason, app_);
+            app_.getMasterTransaction().canonicalize(&tx);
+
             auto const pap = &app_;
             app_.getJobQueue().addJob(
                 JtTransaction, "TxsToTxn", [pap, stx]() { pap->getOPs().submitTransaction(stx); });
+            return;
         }
         catch (std::exception const& ex)
         {
@@ -66,6 +76,11 @@ ConsensusTransSetSF::gotNode(
                             << ex.what();
         }
     }
+
+    // Inner nodes have no alternative recovery source, so they must be cached
+    // for getNode() to satisfy later lookups. Any leaf we could not store in
+    // the TransactionMaster above also falls through to here.
+    nodeCache_.insert(nodeHash, nodeData);
 }
 
 std::optional<Blob>
